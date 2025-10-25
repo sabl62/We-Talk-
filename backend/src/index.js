@@ -8,7 +8,7 @@ import cors from "cors"
 import { app,server } from "./lib/socket.js"
 dotenv.config();
 import friendRoutes from "./routes/friend.route.js"
-
+import { fileURLToPath } from "url";
 import path from "path";
 
 const __filename = fileURLToPath(import.meta.url);
