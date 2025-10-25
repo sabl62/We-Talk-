@@ -11,7 +11,7 @@ import friendRoutes from "./routes/friend.route.js"
 
 import path from "path";
 
-
+const __filename = fileURLToPath(import.meta.url);
 const PORT = process.env.PORT;
 const __dirname = path.resolve();
 
@@ -28,15 +28,12 @@ app.use("/api/messages", messageRoutes);
 app.use("/api/friends", friendRoutes);
 
 
-if(process.env.NODE_ENV === "production"){
-    app.use(express.static(path.join(__dirname, "../frontend/dist")))
+if (process.env.NODE_ENV === "production") {
+    app.use(express.static(path.join(__dirname, "../frontend/dist")));
 
-
-    app.get("/:path([^]*)", (req, res) => {
+    app.get("/*", (req, res) => {
         res.sendFile(path.join(__dirname, "../frontend/dist/index.html"));
     });
-
-
 }
 
 server.listen(PORT, () =>{
