@@ -20,8 +20,6 @@ const App = () => {
     checkAuth();
   }, [checkAuth]);
 
-  console.log({ authUser });
-                 
   if (isCheckingAuth && !authUser)
     return (
       <div className="flex items-center justify-center h-screen">
@@ -32,7 +30,6 @@ const App = () => {
   return (
     <div data-theme={theme}>
       <Navbar />
-
       <Routes>
         <Route
           path="/"
@@ -54,7 +51,6 @@ const App = () => {
       </Routes>
 
       <Toaster />
-
     </div>
   );
 };

@@ -21,9 +21,28 @@ const messageSchema = new mongoose.Schema(
         image: {
             type: String,
         },
+
+        // ⭐ Reply feature: store parent message reference
+        replyTo: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Message",
+            default: null,
+        },
+
+        // ⭐ Soft delete: message stays in DB but is hidden
+        isDeleted: {
+            type: Boolean,
+            default: false,
+        },
+
+        // (Optional) For editing messages later
+        isEdited: {
+            type: Boolean,
+            default: false,
+        }
     },
     { timestamps: true }
-)
+);
 
 const Message = mongoose.model("Message", messageSchema);
 
