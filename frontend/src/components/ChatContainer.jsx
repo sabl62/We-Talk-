@@ -11,7 +11,7 @@ import {
   MessageSquare,
   Trash2,
   CornerUpLeft,
-  Image as ImageIcon, // Renamed to avoid conflict with HTML Image
+  Image as ImageIcon,
 } from "lucide-react";
 import ImageModal from "./ImageModal";
 
@@ -46,14 +46,12 @@ const ChatContainer = () => {
     unsubscribeFromMessages,
   ]);
 
-  // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
     if (messageEndRef.current && messages) {
       messageEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
   }, [messages]);
 
-  // Auto-focus input when chat opens or user changes
   useEffect(() => {
     if (selectedUser && inputRef.current) {
       setTimeout(() => {
@@ -62,7 +60,6 @@ const ChatContainer = () => {
     }
   }, [selectedUser?._id]);
 
-  // Auto-focus when clicking "reply"
   useEffect(() => {
     if (replyingTo && inputRef.current) {
       inputRef.current.focus();
@@ -99,7 +96,7 @@ const ChatContainer = () => {
   };
 
   return (
-    <div className="flex-1 flex flex-col h-full">
+    <div className="flex-1 flex flex-col h-full w-full">
       {/* Header */}
       <div className="sticky top-0 z-20 bg-base-100 border-b border-base-300">
         <ChatHeader
@@ -115,109 +112,107 @@ const ChatContainer = () => {
           {isMessagesLoading ? (
             <MessageSkeleton />
           ) : (
-            messages.map((message) => {
-              const isSelf = message.senderId === authUser._id;
+            messages
+              .filter((message) => !message.isDeleted) // Filter out deleted messages
+              .map((message) => {
+                const isSelf = message.senderId === authUser._id;
 
-              // --------------------------------------------------------
-              // ⚡️ HYBRID REPLY LOGIC (The Fix)
-              // --------------------------------------------------------
-              let replyMsg;
+                // Find the replied message
+                let replyMsg;
+                if (message.replyTo && typeof message.replyTo === "object") {
+                  replyMsg = message.replyTo;
+                } else if (
+                  message.replyTo &&
+                  typeof message.replyTo === "string"
+                ) {
+                  replyMsg = messages.find((m) => m._id === message.replyTo);
+                }
 
-              // Case 1: Backend sent the full populated object
-              if (message.replyTo && typeof message.replyTo === "object") {
-                replyMsg = message.replyTo;
-              }
-              // Case 2: Backend/Socket sent just a string ID, find it in list
-              else if (message.replyTo && typeof message.replyTo === "string") {
-                replyMsg = messages.find((m) => m._id === message.replyTo);
-              }
-              // --------------------------------------------------------
-
-              return (
-                <div
-                  key={message._id}
-                  id={message._id}
-                  className={`
+                return (
+                  <div
+                    key={message._id}
+                    id={message._id}
+                    className={`
                     flex items-start gap-3 relative scroll-mt-24
                     ${isSelf ? "justify-end" : "justify-start"}
                   `}
-                >
-                  {!isSelf && (
-                    <div className="avatar">
-                      <div className="size-10 rounded-full border">
-                        <img
-                          src={selectedUser.profilePic || "/avatar.png"}
-                          alt={selectedUser.fullName}
-                        />
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="max-w-[75%] md:max-w-[60%]">
-                    <div
-                      className={`relative inline-block rounded-2xl p-3 shadow-sm ${
-                        isSelf
-                          ? "bg-gradient-to-br from-emerald-500 to-emerald-600 text-white"
-                          : "bg-base-100 border border-base-300 text-base-content"
-                      }`}
-                    >
-                      <div className="flex items-center justify-between gap-2 mb-1">
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs opacity-70 font-medium">
-                            {isSelf ? "You" : selectedUser.fullName}
-                          </span>
-                          <span className="text-xs opacity-50">•</span>
-                          <time className="text-xs opacity-50">
-                            {formatMessageTime(message.createdAt)}
-                          </time>
-                          {message.isEdited && (
-                            <span className="ml-2 text-xs italic opacity-60">
-                              (edited)
-                            </span>
-                          )}
+                  >
+                    {!isSelf && (
+                      <div className="avatar">
+                        <div className="size-10 rounded-full border">
+                          <img
+                            src={selectedUser.profilePic || "/avatar.png"}
+                            alt={selectedUser.fullName}
+                          />
                         </div>
+                      </div>
+                    )}
 
-                        {/* Dropdown Menu */}
-                        <div className="dropdown dropdown-end z-10">
-                          <label
-                            tabIndex={0}
-                            className="cursor-pointer p-1 rounded hover:bg-base-200"
-                          >
-                            <MoreVertical
-                              className={`${isSelf ? "text-white" : ""}`}
-                            />
-                          </label>
-                          <ul
-                            tabIndex={0}
-                            className="dropdown-content menu p-2 shadow bg-base-200 rounded-box w-44 text-base-content"
-                          >
-                            <li>
-                              <button
-                                onClick={() => handleReply(message)}
-                                className="flex items-center gap-2"
-                              >
-                                <CornerUpLeft className="size-4" /> Reply
-                              </button>
-                            </li>
+                    <div className="max-w-[75%] md:max-w-[60%]">
+                      <div
+                        className={`relative inline-block rounded-2xl p-3 shadow-sm ${
+                          isSelf
+                            ? "bg-gradient-to-br from-emerald-500 to-emerald-600 text-white"
+                            : "bg-base-100 border border-base-300 text-base-content"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between gap-2 mb-1">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs opacity-70 font-medium">
+                              {isSelf ? "You" : selectedUser.fullName}
+                            </span>
+                            <span className="text-xs opacity-50">•</span>
+                            <time className="text-xs opacity-50">
+                              {formatMessageTime(message.createdAt)}
+                            </time>
+                            {message.isEdited && (
+                              <span className="ml-2 text-xs italic opacity-60">
+                                (edited)
+                              </span>
+                            )}
+                          </div>
 
-                            {isSelf && (
+                          {/* Dropdown Menu */}
+                          <div className="dropdown dropdown-end z-10">
+                            <label
+                              tabIndex={0}
+                              className="cursor-pointer p-1 rounded hover:bg-base-200"
+                            >
+                              <MoreVertical
+                                className={`${isSelf ? "text-white" : ""}`}
+                              />
+                            </label>
+                            <ul
+                              tabIndex={0}
+                              className="dropdown-content menu p-2 shadow bg-base-200 rounded-box w-44 text-base-content"
+                            >
                               <li>
                                 <button
-                                  onClick={() => handleDelete(message._id)}
-                                  className="flex items-center gap-2 text-error"
+                                  onClick={() => handleReply(message)}
+                                  className="flex items-center gap-2"
                                 >
-                                  <Trash2 className="size-4" /> Delete
+                                  <CornerUpLeft className="size-4" /> Reply
                                 </button>
                               </li>
-                            )}
-                          </ul>
-                        </div>
-                      </div>
 
-                      {/* ⚡️ REPLY BUBBLE DISPLAY */}
-                      {replyMsg && (
-                        <div
-                          className={`
+                              {isSelf && (
+                                <li>
+                                  <button
+                                    onClick={() => handleDelete(message._id)}
+                                    className="flex items-center gap-2 text-error"
+                                  >
+                                    <Trash2 className="size-4" /> Delete
+                                  </button>
+                                </li>
+                              )}
+                            </ul>
+                          </div>
+                        </div>
+
+                        {/* Reply Preview in Message Bubble */}
+                        {replyMsg && (
+                          <div
+                            className={`
                             mb-2 p-2 rounded-md border-l-4 transition-all duration-300
                             ${
                               isSelf
@@ -227,62 +222,69 @@ const ChatContainer = () => {
                             hover:bg-primary/20
                             cursor-pointer
                           `}
-                          onClick={() => {
-                            // Handle scrolling to message
-                            const targetId = replyMsg._id || replyMsg; // handle object or string
-                            const target = document.getElementById(targetId);
+                            onClick={() => {
+                              const targetId = replyMsg._id || replyMsg;
+                              const target = document.getElementById(targetId);
 
-                            if (target) {
-                              target.scrollIntoView({
-                                behavior: "smooth",
-                                block: "center",
-                              });
-                              target.classList.add("ring-4", "ring-primary/60");
-                              setTimeout(() => {
-                                target.classList.remove(
+                              if (target) {
+                                target.scrollIntoView({
+                                  behavior: "smooth",
+                                  block: "center",
+                                });
+                                target.classList.add(
                                   "ring-4",
                                   "ring-primary/60"
                                 );
-                              }, 1200);
-                            }
-                          }}
-                        >
-                          <div className="text-xs opacity-80 truncate font-medium">
-                            {replyMsg.isDeleted ? (
-                              <span className="italic opacity-70">
-                                Message deleted
-                              </span>
-                            ) : (
-                              <span className="flex items-center gap-1">
-                                {replyMsg.text ? (
-                                  replyMsg.text
-                                ) : replyMsg.image ? (
-                                  <>
-                                    <ImageIcon size={12} /> Photo
-                                  </>
-                                ) : (
-                                  "Message"
-                                )}
-                              </span>
-                            )}
+                                setTimeout(() => {
+                                  target.classList.remove(
+                                    "ring-4",
+                                    "ring-primary/60"
+                                  );
+                                }, 1200);
+                              }
+                            }}
+                          >
+                            <div className="text-xs opacity-70 mb-1 font-medium">
+                              {replyMsg.senderId === authUser._id
+                                ? "You"
+                                : selectedUser.fullName}
+                            </div>
+                            <div className="text-xs opacity-80 truncate">
+                              {replyMsg.isDeleted ? (
+                                <span className="italic opacity-70">
+                                  Message deleted
+                                </span>
+                              ) : (
+                                <span className="flex items-center gap-1">
+                                  {replyMsg.text ? (
+                                    replyMsg.text
+                                  ) : replyMsg.image ? (
+                                    <>
+                                      <ImageIcon size={12} /> Photo
+                                    </>
+                                  ) : (
+                                    "Message"
+                                  )}
+                                </span>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                      )}
-
-                      <div className="space-y-2">
-                        {message.image && (
-                          <img
-                            src={message.image}
-                            alt="attachment"
-                            className="w-full max-w-[320px] md:max-w-[420px] rounded-md cursor-pointer object-cover"
-                            onClick={() => setImagePreviewSrc(message.image)}
-                          />
                         )}
 
-                        {!message.isDeleted ? (
-                          message.text ? (
-                            <p
-                              className={`
+                        <div className="space-y-2">
+                          {message.image && (
+                            <img
+                              src={message.image}
+                              alt="attachment"
+                              className="w-full max-w-[320px] md:max-w-[420px] rounded-md cursor-pointer object-cover"
+                              onClick={() => setImagePreviewSrc(message.image)}
+                            />
+                          )}
+
+                          {!message.isDeleted ? (
+                            message.text ? (
+                              <p
+                                className={`
                                 ${isSelf ? "leading-relaxed" : ""}
                                 break-words 
                                 break-all 
@@ -290,32 +292,32 @@ const ChatContainer = () => {
                                 max-w-full
                                 whitespace-pre-wrap
                               `}
-                            >
-                              {message.text}
+                              >
+                                {message.text}
+                              </p>
+                            ) : null
+                          ) : (
+                            <p className="italic opacity-60 text-xs mt-1">
+                              This message was deleted
                             </p>
-                          ) : null
-                        ) : (
-                          <p className="italic opacity-60 text-xs mt-1">
-                            This message was deleted
-                          </p>
-                        )}
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  {isSelf && (
-                    <div className="avatar">
-                      <div className="size-10 rounded-full border">
-                        <img
-                          src={authUser.profilePic || "/avatar.png"}
-                          alt={authUser.fullName}
-                        />
+                    {isSelf && (
+                      <div className="avatar">
+                        <div className="size-10 rounded-full border">
+                          <img
+                            src={authUser.profilePic || "/avatar.png"}
+                            alt={authUser.fullName}
+                          />
+                        </div>
                       </div>
-                    </div>
-                  )}
-                </div>
-              );
-            })
+                    )}
+                  </div>
+                );
+              })
           )}
 
           <div ref={messageEndRef} />
@@ -323,7 +325,7 @@ const ChatContainer = () => {
       </div>
 
       {/* Input area */}
-      <div className="border-t border-base-300 bg-base-100 sticky bottom-0 z-10">
+      <div className="border-t border-base-300 bg-base-100 sticky bottom-0 z-10 overflow-visible">
         <div className="max-w-3xl mx-auto">
           <MessageInput
             ref={inputRef}

@@ -49,7 +49,7 @@ const Sidebar = ({ collapsed = false }) => {
       {/* Hamburger Menu Button - Only visible on small screens */}
       <button
         onClick={() => setIsOpen(true)}
-        className="fixed top-4 left-4 z-40 lg:hidden btn btn-circle btn-primary shadow-lg"
+        className="fixed top-20 left-4 z-40 lg:hidden btn btn-circle btn-primary shadow-lg"
         aria-label="Open contacts menu"
       >
         <Menu className="size-6" />
@@ -68,7 +68,7 @@ const Sidebar = ({ collapsed = false }) => {
         className={`
           fixed lg:relative
           top-0 left-0 h-full
-          w-80 lg:w-72
+          w-80 lg:w-80
           border-r border-base-300
           transform transition-transform duration-300 ease-in-out
           z-50

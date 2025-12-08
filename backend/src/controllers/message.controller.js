@@ -47,6 +47,11 @@ export const sendMessage = async (req, res) => {
         const { id: receiverId } = req.params;
         const senderId = req.user._id;
 
+        console.log("📨 Received message request:");
+        console.log("  - text:", text);
+        console.log("  - replyTo:", replyTo);
+        console.log("  - replyTo type:", typeof replyTo);
+
         let imageUrl = null;
 
         if (image) {
@@ -63,9 +68,11 @@ export const sendMessage = async (req, res) => {
         });
 
         await newMessage.save();
+        console.log("💾 Message saved, replyTo field:", newMessage.replyTo);
 
         // Populate the reply message object
         await newMessage.populate("replyTo");
+        console.log("✅ After populate, replyTo:", newMessage.replyTo);
 
         // SOCKET EVENT — send to receiver in real time
         const receiverSocketId = getReceiverSocketId(receiverId);

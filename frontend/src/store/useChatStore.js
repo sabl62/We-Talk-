@@ -6,12 +6,19 @@ import { useAuthStore } from "./useAuthStore";
 export const useChatStore = create((set, get) => ({
     messages: [],
     users: [],
-    selectedUser: null,
+    selectedUser: (() => {
+        try {
+            const stored = localStorage.getItem("selectedUser");
+            console.log("Loading selectedUser from localStorage:", stored);
+            return stored ? JSON.parse(stored) : null;
+        } catch (error) {
+            console.error("Error loading selectedUser from localStorage:", error);
+            return null;
+        }
+    })(),
 
-    replyMessage: null,     
     isUsersLoading: false,
     isMessagesLoading: false,
-
 
     getFriends: async () => {
         set({ isUsersLoading: true });
@@ -25,7 +32,6 @@ export const useChatStore = create((set, get) => ({
         }
     },
 
-
     getMessages: async (userId) => {
         set({ isMessagesLoading: true });
         try {
@@ -38,45 +44,29 @@ export const useChatStore = create((set, get) => ({
         }
     },
 
-
     sendMessage: async (messageData) => {
-        const { selectedUser, messages, replyMessage } = get();
-
+        const { selectedUser, messages } = get();
 
         if (!messageData.text && !messageData.image) return;
 
         try {
             const res = await axiosInstance.post(
                 `/messages/send/${selectedUser._id}`,
-                {
-                    ...messageData,
-                    replyTo: replyMessage ? replyMessage._id : null,
-                }
+                messageData
             );
 
             const newMessage = res.data;
 
-
-            if (replyMessage && newMessage.replyTo) {
-                newMessage.replyTo = replyMessage;
-            }
-
-
             set({
-                messages: [...messages, newMessage],  
-                replyMessage: null,                   
+                messages: [...messages, newMessage],
             });
 
+            return newMessage;
         } catch (error) {
             toast.error(error?.response?.data?.message || "Something went wrong");
+            throw error;
         }
     },
-
-
-
-    setReplyMessage: (msg) => set({ replyMessage: msg }),
-    clearReplyMessage: () => set({ replyMessage: null }),
-
 
     deleteMessage: async (messageId) => {
         const { messages } = get();
@@ -92,7 +82,6 @@ export const useChatStore = create((set, get) => ({
             toast.error("Failed to delete message");
         }
     },
-
 
     subscribeToMessages: () => {
         const { selectedUser } = get();
@@ -115,13 +104,11 @@ export const useChatStore = create((set, get) => ({
             });
         });
 
-
         socket.on("messageDeleted", (messageId) => {
             set({
                 messages: get().messages.filter((msg) => msg._id !== messageId),
             });
         });
-
 
         socket.on("messageUpdated", (updatedMsg) => {
             set({
@@ -139,5 +126,21 @@ export const useChatStore = create((set, get) => ({
         socket.off("messageUpdated");
     },
 
-    setSelectedUser: (selectedUser) => set({ selectedUser }),
+    setSelectedUser: (selectedUser) => {
+        console.log("setSelectedUser called with:", selectedUser);
+        set({ selectedUser });
+        // Save to localStorage
+        try {
+            if (selectedUser) {
+                const userString = JSON.stringify(selectedUser);
+                console.log("Saving to localStorage:", userString);
+                localStorage.setItem("selectedUser", userString);
+            } else {
+                console.log("Removing from localStorage");
+                localStorage.removeItem("selectedUser");
+            }
+        } catch (error) {
+            console.error("Error saving to localStorage:", error);
+        }
+    },
 }));
